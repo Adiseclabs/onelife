@@ -1,5 +1,5 @@
 # 1LIFE — One-Decrypt Encryption
-
+https://1life.netlify.app/
 > *One message. One chance. No second chances.*
 
 **1LIFE** is a browser-based encryption tool built around the **ODE (One-Decrypt Encryption)** protocol — a novel cryptographic scheme where each ciphertext can only be decrypted **exactly once**. After the first successful decryption, the key material is permanently and irrevocably destroyed through three independent enforcement layers. No servers. No cloud. Pure mathematics.
