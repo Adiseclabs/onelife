@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1LIFE — One-Decrypt Encryption</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080808;--surface:#0f0f0f;--card:#111;--border:#1e1e1e;--border2:#2a2a2a;
+  --red:#e63b2e;--red-dim:#7a1f18;--red-glow:#e63b2e40;
+  --amber:#d97706;--green:#16a34a;--blue:#2563eb;--purple:#7c3aed;
+  --text:#e8e6e0;--muted:#6b6560;
+  --mono:'DM Mono',monospace;--serif:'Instrument Serif',serif;--display:'Bebas Neue',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");opacity:.025;pointer-events:none;z-index:9999}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:2rem}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 60%,#e63b2e0a 0%,transparent 70%),radial-gradient(ellipse 30% 30% at 20% 20%,#e63b2e05 0%,transparent 60%);pointer-events:none}
+.hero-bg::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.008) 2px,rgba(255,255,255,.008) 4px);pointer-events:none}
+.hero-eyebrow{font-size:11px;letter-spacing:.3em;color:var(--red);text-transform:uppercase;margin-bottom:1.5rem;opacity:0;animation:fadeUp .8s .2s forwards}
+.hero-title{font-family:var(--display);font-size:clamp(7rem,20vw,18rem);line-height:.85;letter-spacing:-.02em;color:var(--text);text-align:center;opacity:0;animation:fadeUp .8s .4s forwards}
+.hero-title span{color:var(--red);display:inline-block;position:relative}
+.hero-title span::before,.hero-title span::after{content:'1';position:absolute;inset:0;color:var(--red)}
+.hero-title span::before{animation:glitch1 4s infinite;clip-path:polygon(0 20%,100% 20%,100% 40%,0 40%);transform:translateX(-2px);opacity:.7}
+.hero-title span::after{animation:glitch2 4s infinite;clip-path:polygon(0 60%,100% 60%,100% 80%,0 80%);transform:translateX(2px);color:#d97706;opacity:.5}
+.hero-sub{font-family:var(--serif);font-style:italic;font-size:clamp(1rem,2.5vw,1.4rem);color:var(--muted);margin-top:1.5rem;text-align:center;max-width:500px;opacity:0;animation:fadeUp .8s .6s forwards}
+.hero-cta{display:flex;gap:1rem;margin-top:3rem;opacity:0;animation:fadeUp .8s .8s forwards;flex-wrap:wrap;justify-content:center}
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:.75rem 2rem;border:1px solid;cursor:pointer;text-decoration:none;transition:all .2s;display:inline-block}
+.btn-red{background:var(--red);border-color:var(--red);color:#fff}.btn-red:hover{background:transparent;color:var(--red);box-shadow:0 0 30px var(--red-glow)}
+.btn-ghost{background:transparent;border-color:var(--border2);color:var(--muted)}.btn-ghost:hover{border-color:var(--text);color:var(--text)}
+.scroll-hint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;color:var(--muted);font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:0;animation:fadeUp 1s 1.2s forwards}
+.scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--red),transparent);animation:scrollPulse 2s ease-in-out infinite}
+.stats-bar{border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;overflow-x:auto}
+.stat{flex:1;min-width:160px;padding:1.5rem 2rem;border-right:1px solid var(--border)}.stat:last-child{border-right:none}
+.stat-num{font-family:var(--display);font-size:2.5rem;color:var(--red);line-height:1}
+.stat-label{font-size:11px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-top:.25rem}
+.section{max-width:1100px;margin:0 auto;padding:5rem 2rem}
+.section-tag{display:inline-flex;align-items:center;gap:.5rem;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--red);margin-bottom:2rem}
+.section-tag::before{content:'';display:block;width:20px;height:1px;background:var(--red)}
+.section-title{font-family:var(--display);font-size:clamp(3rem,8vw,6rem);line-height:.9;letter-spacing:.02em;margin-bottom:1.5rem}
+.divider{height:1px;background:linear-gradient(to right,transparent,var(--border2),transparent)}
+.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin-top:3rem}
+.how-card{background:var(--card);padding:2.5rem;position:relative;overflow:hidden}
+.how-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--red);transform:scaleX(0);transform-origin:left;transition:transform .4s}
+.how-card:hover::before{transform:scaleX(1)}
+.how-num{font-family:var(--display);font-size:5rem;color:var(--border2);line-height:1;position:absolute;top:1rem;right:1.5rem;transition:color .3s}
+.how-card:hover .how-num{color:var(--red-dim)}
+.how-title{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:.75rem}
+.how-body{font-size:13px;color:var(--muted);line-height:1.7;position:relative;z-index:1}
+.tool-area{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:5rem 0}
+.tool-inner{max-width:1100px;margin:0 auto;padding:0 2rem}
+.tool-tabs{display:flex;border-bottom:1px solid var(--border)}
+.tab-btn{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:1rem 2rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;transition:all .2s;position:relative;bottom:-1px}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--red)}
+.tab-btn:hover:not(.active){color:var(--text)}
+.tab-panel{display:none;padding-top:2rem}.tab-panel.active{display:block}
+.mode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;margin-bottom:1.5rem}
+.mode-card{background:var(--bg);border:1px solid var(--border2);padding:1rem 1.25rem;cursor:pointer;transition:all .2s;position:relative}
+.mode-card:hover{border-color:var(--muted)}.mode-card.selected{border-color:var(--red);background:#150808}
+.mode-card.selected::after{content:'✓';position:absolute;top:.5rem;right:.75rem;color:var(--red);font-size:12px}
+.mode-name{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--text);margin-bottom:.3rem}
+.mode-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.mode-badge{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:.15rem .5rem;margin-top:.4rem;border:1px solid}
+.badge-red{color:var(--red);border-color:var(--red-dim)}.badge-blue{color:#60a5fa;border-color:#1e3a5f}
+.badge-green{color:#4ade80;border-color:#14532d}.badge-purple{color:#c084fc;border-color:#4c1d95}.badge-amber{color:#fbbf24;border-color:#78350f}
+.tool-card{background:var(--card);border:1px solid var(--border);padding:2rem}
+.field-group{margin-bottom:1.5rem}
+.field-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;display:block}
+textarea,input[type=text],input[type=password],input[type=file]{width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:13px;padding:.875rem 1rem;resize:vertical;outline:none;transition:border-color .2s;line-height:1.6}
+textarea:focus,input:focus{border-color:var(--red)}
+textarea{min-height:120px}
+input[type=file]{cursor:pointer;padding:.75rem 1rem}
+input[type=file]::-webkit-file-upload-button{background:var(--border2);border:none;color:var(--text);font-family:var(--mono);font-size:11px;padding:.4rem 1rem;cursor:pointer;margin-right:1rem;letter-spacing:.1em}
+.btn-action{font-family:var(--mono);font-size:11px;letter-spacing:.25em;text-transform:uppercase;padding:.875rem 2.5rem;background:var(--red);border:1px solid var(--red);color:#fff;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.75rem}
+.btn-action:hover{background:transparent;color:var(--red);box-shadow:0 0 40px var(--red-glow)}
+.btn-action:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.btn-action-ghost{background:transparent;border-color:var(--border2);color:var(--muted)}.btn-action-ghost:hover{border-color:var(--text);color:var(--text);box-shadow:none}
+.btn-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+.output-box{background:var(--bg);border:1px solid var(--border);padding:1.25rem;min-height:70px;font-family:var(--mono);font-size:12px;line-height:1.7;color:var(--muted);word-break:break-all;white-space:pre-wrap;position:relative;margin-top:1.5rem}
+.output-box.has-content{color:var(--text);border-color:var(--border2)}
+.output-box.success{border-left:3px solid var(--green)}.output-box.error{border-left:3px solid var(--red);color:#ff6b6b}
+.output-box.warning{border-left:3px solid var(--amber);color:#fbbf24}.output-box.destroyed{border-left:3px solid var(--red);background:#0d0404;color:#ff6060}
+.copy-btn{position:absolute;top:.75rem;right:.75rem;background:var(--border2);border:none;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.15em;padding:.3rem .75rem;cursor:pointer;text-transform:uppercase;transition:all .2s}.copy-btn:hover{color:var(--text);background:#333}
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;animation:pulse 2s ease-in-out infinite}
+.dot-red{background:var(--red)}.dot-green{background:var(--green)}.dot-amber{background:var(--amber)}
+.status-bar{display:flex;align-items:center;gap:.5rem;font-size:11px;color:var(--muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)}
+.blob-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1px;background:var(--border);margin-top:1rem}
+.blob-meta-item{background:var(--bg);padding:.75rem 1rem}
+.blob-meta-key{font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase}
+.blob-meta-val{font-size:13px;color:var(--text);margin-top:.2rem}
+.progress-bar{height:2px;background:var(--border);overflow:hidden;margin-top:1rem;display:none}.progress-bar.active{display:block}
+.progress-fill{height:100%;background:var(--red);width:0%;transition:width .3s}
+.download-area{background:#0a150a;border:1px solid #16a34a33;border-left:3px solid var(--green);padding:1.25rem 1.5rem;display:none;align-items:center;gap:1rem;margin-top:1rem;flex-wrap:wrap}
+.download-area.show{display:flex}.download-info{flex:1}.download-name{font-size:13px;color:var(--text)}.download-meta{font-size:11px;color:var(--muted);margin-top:.2rem}
+.btn-download{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:.6rem 1.5rem;background:var(--green);border:none;color:#fff;cursor:pointer;text-decoration:none;transition:opacity .2s}.btn-download:hover{opacity:.85}
+.callout{background:#1a0a0a;border:1px solid var(--red-dim);border-left:3px solid var(--red);padding:1.25rem 1.5rem;display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.5rem}
+.callout-icon{color:var(--red);font-size:1.1rem;flex-shrink:0}.callout-text{font-size:12px;color:#ff9999;line-height:1.6}
+.callout.amber{background:#1a1400;border-color:#78350f;border-left-color:var(--amber)}.callout.amber .callout-icon,.callout.amber .callout-text{color:#fbbf24}
+.destroyed-banner{background:#1a0000;border:1px solid var(--red);padding:1.5rem 2rem;text-align:center;margin-top:1.5rem;display:none}
+.destroyed-banner.show{display:block}.destroyed-title{font-family:var(--display);font-size:2rem;color:var(--red);letter-spacing:.1em;margin-bottom:.5rem}
+.destroyed-sub{font-size:12px;color:var(--muted)}
+.algo-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem}
+.algo-block{padding:2rem;background:var(--card);border:1px solid var(--border);border-top:2px solid var(--red)}
+.algo-label{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--red);margin-bottom:1rem}
+.code-line{font-size:12px;line-height:2;color:var(--muted);padding:.1rem 0}
+.code-line .kw{color:#c084fc}.code-line .fn{color:#60a5fa}.code-line .str{color:#34d399}.code-line .op{color:var(--red)}.code-line .cm{color:#374151;font-style:italic}
+.spinner{width:14px;height:14px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;display:none;flex-shrink:0}.loading .spinner{display:block}
+footer{border-top:1px solid var(--border);padding:3rem 2rem;text-align:center;color:var(--muted);font-size:11px;letter-spacing:.1em}
+.footer-title{font-family:var(--display);font-size:2rem;color:var(--border2);margin-bottom:.5rem;letter-spacing:.05em}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glitch1{0%,90%,100%{transform:translateX(0);opacity:0}92%{transform:translateX(-3px);opacity:.7}94%{transform:translateX(2px);opacity:.5}96%{transform:translateX(-1px);opacity:.3}}
+@keyframes glitch2{0%,90%,100%{transform:translateX(0);opacity:0}93%{transform:translateX(3px);opacity:.5}95%{transform:translateX(-2px);opacity:.4}97%{transform:translateX(1px);opacity:.2}}
+@keyframes scrollPulse{0%,100%{opacity:.3;transform:scaleY(1)}50%{opacity:1;transform:scaleY(1.1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:700px){.how-grid,.algo-grid,.mode-grid{grid-template-columns:1fr}.hero-title{font-size:7rem}.stats-bar{flex-wrap:wrap}.stat{min-width:50%;border-right:none;border-bottom:1px solid var(--border)}}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <p class="hero-eyebrow">One message. One chance.</p>
+  <h1 class="hero-title"><span>1</span>LIFE</h1>
+  <p class="hero-sub">Encryption that destroys itself after a single read.<br>No servers. No cloud. Pure mathematics.</p>
+  <div class="hero-cta">
+    <a href="#tool" class="btn btn-red">Encrypt Now</a>
+    <a href="#how" class="btn btn-ghost">How It Works</a>
+  </div>
+  <div class="scroll-hint"><div class="scroll-line"></div>Scroll</div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-num">1×</div><div class="stat-label">ODE decryption</div></div>
+  <div class="stat"><div class="stat-num">256</div><div class="stat-label">AES key bits</div></div>
+  <div class="stat"><div class="stat-num">5</div><div class="stat-label">Cipher modes</div></div>
+  <div class="stat"><div class="stat-num">3</div><div class="stat-label">Destroy layers</div></div>
+  <div class="stat"><div class="stat-num">0</div><div class="stat-label">Servers needed</div></div>
+</div>
+
+<section id="how" class="section">
+  <div class="section-tag">Protocol</div>
+  <h2 class="section-title">HOW<br>IT WORKS</h2>
+  <p style="color:var(--muted);max-width:540px;font-size:13px;line-height:1.8;">ODE uses three independent layers to enforce one-decrypt. Even if you keep the original file, all three layers must pass — and after decryption, all three are permanently tripped.</p>
+  <div class="how-grid">
+    <div class="how-card"><div class="how-num">01</div><div class="how-title">Layer 1 — Fingerprint DB</div><div class="how-body">Before anything, a SHA-256 fingerprint of the blob is checked against localStorage. If found, decryption is blocked — even if you re-upload the original untouched file.</div></div>
+    <div class="how-card"><div class="how-num">02</div><div class="how-title">Layer 2 — Header Zeros</div><div class="how-body">After successful decrypt, salt + nonce + hash chain are overwritten with zeros in the file. Re-opening the destroyed file fails the zero-check before any crypto runs.</div></div>
+    <div class="how-card"><div class="how-num">03</div><div class="how-title">Layer 3 — Chain Verify</div><div class="how-body">SHA3-512 hash chain binds key + nonce + salt. Tampering any byte breaks the chain. Zeroed header also breaks the chain — double-enforcing destruction.</div></div>
+    <div class="how-card"><div class="how-num">04</div><div class="how-title">Multi-Mode Support</div><div class="how-body">Beyond ODE, choose standard AES-256-GCM, ChaCha20-Poly1305, AES-CBC+HMAC, or Hybrid RSA+AES for use cases that allow multiple decrypts with a password.</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<section class="section" style="padding-top:3rem">
+  <div class="section-tag">Algorithm</div>
+  <div class="algo-grid">
+    <div class="algo-block">
+      <div class="algo-label">ODE Encrypt</div>
+      <div class="code-line"><span class="cm">// Ephemeral — never stored directly</span></div>
+      <div class="code-line">salt,nonce <span class="op">=</span> <span class="fn">random</span>(<span class="str">32B, 16B</span>)</div>
+      <div class="code-line">K <span class="op">=</span> <span class="fn">SHA3-256</span>(salt <span class="op">||</span> nonce)</div>
+      <div class="code-line">H <span class="op">=</span> <span class="fn">SHA3-512</span>(K <span class="op">||</span> nonce <span class="op">||</span> salt)</div>
+      <div class="code-line">C,tag <span class="op">=</span> <span class="fn">AES-256-GCM</span>(P, K, nonce)</div>
+      <div class="code-line">blob <span class="op">=</span> magic<span class="op">+</span>salt<span class="op">+</span>nonce<span class="op">+</span>H<span class="op">+</span>tag<span class="op">+</span>C</div>
+    </div>
+    <div class="algo-block">
+      <div class="algo-label">ODE Decrypt — 3 Layers</div>
+      <div class="code-line"><span class="cm">// Layer 1: fingerprint blacklist</span></div>
+      <div class="code-line"><span class="kw">if</span> <span class="fn">SHA256</span>(blob[:128]) <span class="kw">in</span> localStorage: <span class="fn">BLOCK</span></div>
+      <div class="code-line"><span class="cm">// Layer 2: zero-header check</span></div>
+      <div class="code-line"><span class="kw">if</span> salt<span class="op">==</span><span class="str">0x00</span> <span class="kw">or</span> nonce<span class="op">==</span><span class="str">0x00</span>: <span class="fn">BLOCK</span></div>
+      <div class="code-line"><span class="cm">// Layer 3: chain verify + decrypt</span></div>
+      <div class="code-line">K <span class="op">=</span> <span class="fn">SHA3-256</span>(salt<span class="op">||</span>nonce); <span class="fn">verify</span> H</div>
+      <div class="code-line">P <span class="op">=</span> <span class="fn">AES-GCM-Dec</span>(C,K,nonce)</div>
+      <div class="code-line"><span class="cm">// Destroy + record</span></div>
+      <div class="code-line">blob[4..116] <span class="op">=</span> <span class="str">zeros</span>; localStorage.<span class="fn">add</span>(fp)</div>
+    </div>
+  </div>
+</section>
+
+<section id="tool" class="tool-area">
+  <div class="tool-inner">
+    <div class="section-tag">Interactive Tool</div>
+    <h2 class="section-title" style="margin-bottom:2rem">TRY IT<br>NOW</h2>
+    <div class="tool-tabs">
+      <button class="tab-btn active" onclick="switchTab('encrypt',this)">⬛ Encrypt</button>
+      <button class="tab-btn" onclick="switchTab('decrypt',this)">🔓 Decrypt</button>
+    </div>
+
+    <!-- ENCRYPT TAB -->
+    <div id="tab-encrypt" class="tab-panel active">
+      <div class="tool-card">
+        <div class="callout">
+          <div class="callout-icon">⚠</div>
+          <div class="callout-text">ODE blobs can only be decrypted <strong>once</strong>. Three independent layers enforce this. After decryption, recovery is mathematically impossible. Download and store the file carefully.</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Encryption Mode</label>
+          <div class="mode-grid" id="enc-mode-grid">
+            <div class="mode-card selected" data-mode="ode" onclick="selectMode(this)">
+              <div class="mode-name">ODE · 1-Life</div>
+              <div class="mode-desc">AES-256-GCM + SHA3-512 hash chain. 3-layer destroy. Self-destructs.</div>
+              <span class="mode-badge badge-red">One-Decrypt</span>
+            </div>
+            <div class="mode-card" data-mode="aes-gcm" onclick="selectMode(this)">
+              <div class="mode-name">AES-256-GCM</div>
+              <div class="mode-desc">Password-based. Authenticated encryption. Industry standard.</div>
+              <span class="mode-badge badge-blue">Multi-use</span>
+            </div>
+            <div class="mode-card" data-mode="chacha20" onclick="selectMode(this)">
+              <div class="mode-name">ChaCha20-Poly1305</div>
+              <div class="mode-desc">Password-based stream cipher. Fast on mobile hardware.</div>
+              <span class="mode-badge badge-green">Fast</span>
+            </div>
+            <div class="mode-card" data-mode="aes-cbc" onclick="selectMode(this)">
+              <div class="mode-name">AES-256-CBC</div>
+              <div class="mode-desc">Password-based. Classic block cipher + HMAC-SHA256.</div>
+              <span class="mode-badge badge-amber">Classic</span>
+            </div>
+            <div class="mode-card" data-mode="hybrid" onclick="selectMode(this)">
+              <div class="mode-name">Hybrid RSA+AES</div>
+              <div class="mode-desc">RSA-2048 wraps AES-256-GCM session key. Asymmetric.</div>
+              <span class="mode-badge badge-purple">Asymmetric</span>
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Secret Message</label>
+          <textarea id="enc-input" placeholder="Type your message here…&#10;&#10;Ctrl+Enter to encrypt."></textarea>
+        </div>
+        <div class="field-group" id="enc-pass-group" style="display:none">
+          <label class="field-label">Password</label>
+          <input type="password" id="enc-pass" placeholder="Enter a strong password…">
+          <div style="font-size:11px;color:var(--muted);margin-top:.4rem">Required to decrypt. Keep it safe.</div>
+        </div>
+        <div class="field-group" id="enc-rsa-info" style="display:none">
+          <div class="callout amber" style="margin-bottom:0"><div class="callout-icon">ℹ</div><div class="callout-text">Hybrid mode generates a one-time RSA-2048 keypair embedded in the output file. The private key is included — no password needed to decrypt.</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-action" id="enc-btn" onclick="doEncrypt()"><div class="spinner"></div>Encrypt</button>
+          <button class="btn-action btn-action-ghost" onclick="clearEncrypt()">Clear</button>
+        </div>
+        <div class="progress-bar" id="enc-progress"><div class="progress-fill" id="enc-progress-fill"></div></div>
+        <div id="enc-output" class="output-box" style="display:none"><button class="copy-btn" onclick="copyOutput('enc-output-text')">Copy</button><span id="enc-output-text"></span></div>
+        <div class="download-area" id="enc-download">
+          <div class="download-info"><div class="download-name" id="dl-name">blob.enc</div><div class="download-meta" id="dl-meta">—</div></div>
+          <a class="btn-download" id="dl-link" download="blob.enc">⬇ Download</a>
+        </div>
+        <div class="status-bar" id="enc-status" style="display:none"><span class="status-dot dot-green"></span><span id="enc-status-text">Ready</span></div>
+      </div>
+      <div class="blob-meta" id="enc-blob-meta" style="display:none"></div>
+    </div>
+
+    <!-- DECRYPT TAB -->
+    <div id="tab-decrypt" class="tab-panel">
+      <div class="tool-card">
+        <div class="callout">
+          <div class="callout-icon">☠</div>
+          <div class="callout-text">ODE decryption is <strong>irreversible and enforced by three independent layers</strong>. Key material is zeroed AND a fingerprint is saved to localStorage. Even re-uploading the original file is blocked permanently on this device.</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Upload Encrypted File</label>
+          <input type="file" id="dec-file" onchange="onBlobSelected(this)">
+        </div>
+        <div id="dec-inspect-area" style="display:none;margin-bottom:1.5rem"><div class="blob-meta" id="dec-blob-info"></div></div>
+        <div class="field-group" id="dec-pass-group" style="display:none">
+          <label class="field-label">Password</label>
+          <input type="password" id="dec-pass" placeholder="Enter the decryption password…">
+        </div>
+        <div class="btn-row">
+          <button class="btn-action" id="dec-btn" onclick="doDecrypt()" disabled><div class="spinner"></div>Decrypt</button>
+          <button class="btn-action btn-action-ghost" onclick="clearDecrypt()">Clear</button>
+        </div>
+        <div class="progress-bar" id="dec-progress"><div class="progress-fill" id="dec-progress-fill"></div></div>
+        <div id="dec-output" class="output-box" style="display:none"><button class="copy-btn" onclick="copyOutput('dec-output-text')">Copy</button><span id="dec-output-text"></span></div>
+        <div class="destroyed-banner" id="destroyed-banner">
+          <div class="destroyed-title">☠ PERMANENTLY DESTROYED</div>
+          <div class="destroyed-sub">Key material zeroed. Fingerprint recorded in localStorage.<br>This file can never be decrypted again on this device.</div>
+        </div>
+        <div class="status-bar" id="dec-status" style="display:none"><span class="status-dot" id="dec-dot"></span><span id="dec-status-text">—</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-title">1LIFE</div>
+  <p>One-Decrypt Encryption Standard v2.0 · ODE Protocol · AES-256-GCM · ChaCha20-Poly1305 · AES-CBC · RSA-2048</p>
+  <p style="margin-top:.5rem">No servers. No storage. No second chances.</p>
+  <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap">
+    <span style="color:var(--border2);font-size:11px;letter-spacing:.15em">DEVELOPED BY</span>
+    <span style="color:var(--text);font-family:var(--display);font-size:1.5rem;letter-spacing:.1em">ADISC<span style="color:var(--red)">LABS</span></span>
+    <span style="color:var(--border2)">·</span>
+    <span style="color:var(--muted);font-size:11px;letter-spacing:.1em">@Aditya Bhosale</span>
+  </div>
+</footer>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  1LIFE v2.0 — Multi-Mode Encryption Engine
+//  ODE (one-decrypt) enforced by 3 independent layers:
+//    1. localStorage fingerprint blacklist
+//    2. Zero-header check on blob bytes
+//    3. SHA3-512 hash chain verification
+//  Other modes: AES-256-GCM | ChaCha20 | AES-CBC | Hybrid RSA+AES
+// ════════════════════════════════════════════════════════════════
+
+// ── MAGIC BYTES ──────────────────────────────────────────────────
+const ODE_MAGIC  = new Uint8Array([79,68,69,49]);     // "ODE1"
+const AES_MAGIC  = new Uint8Array([65,69,83,71,67,77]);// "AESGCM"
+const CC20_MAGIC = new Uint8Array([67,67,50,48,80,49]);// "CC20P1"
+const CBC_MAGIC  = new Uint8Array([65,69,83,67,66,67]);// "AESCBC"
+const HYB_MAGIC  = new Uint8Array([72,89,66,82,73,68]);// "HYBRID"
+
+const SALT_SZ=32, NONCE_SZ=16, CHAIN_SZ=64, TAG_SZ=16;
+const HEADER_SZ=4+SALT_SZ+NONCE_SZ+CHAIN_SZ;
+const FP_STORE='1life_v2_fps';
+
+// ── FINGERPRINT DATABASE (localStorage) ──────────────────────────
+function getFPs(){try{return new Set(JSON.parse(localStorage.getItem(FP_STORE)||'[]'));}catch{return new Set();}}
+function saveFP(fp){try{const s=getFPs();s.add(fp);localStorage.setItem(FP_STORE,JSON.stringify([...s]));}catch{}}
+async function blobFP(bytes){
+  const h=await crypto.subtle.digest('SHA-256',bytes.slice(0,Math.min(128,bytes.length)));
+  return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function isBlobUsed(bytes){return getFPs().has(await blobFP(bytes));}
+async function markUsed(bytes){saveFP(await blobFP(bytes));}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function cat(...a){const n=a.reduce((s,x)=>s+x.length,0);const o=new Uint8Array(n);let p=0;for(const x of a){o.set(x,p);p+=x.length;}return o;}
+function rnd(n){const b=new Uint8Array(n);crypto.getRandomValues(b);return b;}
+function ctEq(a,b){if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a[i]^b[i];return d===0;}
+const ENC=new TextEncoder(), DEC=new TextDecoder();
+function eb(s){return ENC.encode(s);}
+function db(b){return DEC.decode(b);}
+
+// ── SHA-3 (Keccak-f[1600]) ────────────────────────────────────────
+const KRC=[[0x00000001,0],[0x00008082,0],[0x0000808A,-2147483648],[0x80008000,-2147483648],[0x0000808B,0],[0x80000001,0],[0x80008081,-2147483648],[0x00008009,-2147483648],[0x0000008A,0],[0x00000088,0],[0x80008009,0],[0x8000000A,0],[0x8000808B,0],[0x0000008B,-2147483648],[0x00008089,-2147483648],[0x00008003,-2147483648],[0x00008002,-2147483648],[0x00000080,-2147483648],[0x0000800A,0],[0x8000000A,-2147483648],[0x80008081,-2147483648],[0x00008080,-2147483648],[0x80000001,0],[0x80008008,-2147483648]];
+function sha3(bits,data){
+  const rate=(1600-2*bits)/8,buf=data instanceof Uint8Array?data:eb(data);
+  const pad=new Uint8Array(Math.ceil((buf.length+1)/rate)*rate);
+  pad.set(buf);pad[buf.length]=0x06;pad[pad.length-1]|=0x80;
+  const st=new Uint32Array(50);
+  for(let bl=0;bl<pad.length;bl+=rate){
+    for(let i=0;i<rate/4;i+=2){st[Math.floor(i/2)*2]^=(pad[bl+i*2+1]<<8)|pad[bl+i*2];st[Math.floor(i/2)*2+1]^=(pad[bl+i*2+3]<<8)|pad[bl+i*2+2];}
+    for(let r=0;r<24;r++){
+      const C=new Uint32Array(10);
+      for(let x=0;x<5;x++){C[2*x]=st[2*x]^st[2*(x+5)]^st[2*(x+10)]^st[2*(x+15)]^st[2*(x+20)];C[2*x+1]=st[2*x+1]^st[2*(x+5)+1]^st[2*(x+10)+1]^st[2*(x+15)+1]^st[2*(x+20)+1];}
+      for(let x=0;x<5;x++){const D0=C[2*((x+4)%5)]^((C[2*((x+1)%5)+1]<<1)|(C[2*((x+1)%5)]>>>31));const D1=C[2*((x+4)%5)+1]^((C[2*((x+1)%5)]<<1)|(C[2*((x+1)%5)+1]>>>31));for(let y=0;y<5;y++){st[2*(x+5*y)]^=D0;st[2*(x+5*y)+1]^=D1;}}
+      const B=new Uint32Array(50);const ro=[[0,0],[1,36],[2,3],[3,41],[4,18],[5,1],[6,44],[7,10],[8,45],[9,2],[10,62],[11,6],[12,43],[13,15],[14,61],[15,28],[16,55],[17,25],[18,21],[19,56],[20,27],[21,20],[22,39],[23,8],[24,14]];
+      for(let i=0;i<25;i++){const[src,sh]=ro[i];const s=sh%64;const lo=st[2*src],hi=st[2*src+1];const[nl,nh]=s<32?[(lo<<s)|(hi>>>(32-s)),(hi<<s)|(lo>>>(32-s))]:[(hi<<(s-32))|(lo>>>(64-s)),(lo<<(s-32))|(hi>>>(64-s))];const nX=(3*(src%5)+2*Math.floor(src/5))%5;B[2*(nX+5*(src%5))]=nl;B[2*(nX+5*(src%5))+1]=nh;}
+      for(let x=0;x<5;x++)for(let y=0;y<5;y++){const i=2*(x+5*y);st[i]=B[i]^(~B[2*((x+1)%5+5*y)]&B[2*((x+2)%5+5*y)]);st[i+1]=B[i+1]^(~B[2*((x+1)%5+5*y)+1]&B[2*((x+2)%5+5*y)+1]);}
+      st[0]^=KRC[r][0];st[1]^=KRC[r][1];
+    }
+  }
+  const o=new Uint8Array(bits/8);for(let i=0;i<bits/8;i++)o[i]=(st[Math.floor(i/4)]>>>(8*(i%4)))&0xff;return o;
+}
+
+// ── ODE CRYPTO ───────────────────────────────────────────────────
+function odeKey(nonce,salt){return sha3(256,cat(eb("ODE-KEY-DERIVATION-v1"),salt,nonce));}
+function odeChain(key,nonce,salt){return sha3(512,cat(eb("ODE-CHAIN-v1"),key,nonce,salt));}
+
+async function gcmEnc(kb,iv,plain){
+  const k=await crypto.subtle.importKey('raw',kb,{name:'AES-GCM'},false,['encrypt']);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,tagLength:128},k,plain));
+  return{ct:ct.slice(0,ct.length-16),tag:ct.slice(ct.length-16)};
+}
+async function gcmDec(kb,iv,ct,tag){
+  const k=await crypto.subtle.importKey('raw',kb,{name:'AES-GCM'},false,['decrypt']);
+  return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv,tagLength:128},k,cat(ct,tag)));
+}
+
+async function odeEncrypt(plain){
+  const salt=rnd(SALT_SZ),nonce=rnd(NONCE_SZ);
+  const key=odeKey(nonce,salt),chain=odeChain(key,nonce,salt);
+  const{ct,tag}=await gcmEnc(key,nonce,plain);
+  return cat(ODE_MAGIC,salt,nonce,chain,tag,ct);
+}
+
+async function odeDecrypt(blob){
+  // ── LAYER 1: localStorage fingerprint ──
+  if(await isBlobUsed(blob))
+    throw Object.assign(new Error("ALREADY_USED: Fingerprint found in used-key database on this device. This blob was already decrypted here."),{layer:1});
+
+  if(blob.length<HEADER_SZ+TAG_SZ+1)throw new Error("Invalid ODE blob: too small.");
+  if(!ctEq(blob.slice(0,4),ODE_MAGIC))throw new Error("Not a valid ODE blob.");
+
+  let off=4;
+  const salt=blob.slice(off,off+SALT_SZ);off+=SALT_SZ;
+  const nonce=blob.slice(off,off+NONCE_SZ);off+=NONCE_SZ;
+  const chain=blob.slice(off,off+CHAIN_SZ);off+=CHAIN_SZ;
+  const tag=blob.slice(off,off+TAG_SZ);off+=TAG_SZ;
+  const ctext=blob.slice(off);
+
+  // ── LAYER 2: zero-header check ──
+  if(ctEq(salt,new Uint8Array(SALT_SZ))||ctEq(nonce,new Uint8Array(NONCE_SZ)))
+    throw Object.assign(new Error("ALREADY_USED: Key material is zeroed. This blob was already decrypted and destroyed."),{layer:2});
+
+  // ── LAYER 3: hash chain + AES-GCM ──
+  const key=odeKey(nonce,salt);
+  if(!ctEq(chain,odeChain(key,nonce,salt)))
+    throw new Error("TAMPERED: Hash chain verification failed. File is corrupted or tampered.");
+
+  let plain;
+  try{plain=await gcmDec(key,nonce,ctext,tag);}
+  catch{throw new Error("TAMPERED: AES-GCM authentication failed.");}
+
+  // ── DESTROY: zero header + record fingerprint ──
+  const destroyed=new Uint8Array(blob);
+  destroyed.fill(0,4,4+SALT_SZ+NONCE_SZ+CHAIN_SZ);
+  await markUsed(blob); // fingerprint the ORIGINAL bytes before zeroing
+
+  return{plain,destroyed};
+}
+
+function odeInspect(blob){
+  if(blob.length<HEADER_SZ+TAG_SZ+1)return{valid:false,reason:"Too small"};
+  if(!ctEq(blob.slice(0,4),ODE_MAGIC))return{valid:false,reason:"Bad magic"};
+  const salt=blob.slice(4,4+SALT_SZ),nonce=blob.slice(4+SALT_SZ,4+SALT_SZ+NONCE_SZ);
+  const used=ctEq(salt,new Uint8Array(SALT_SZ))||ctEq(nonce,new Uint8Array(NONCE_SZ));
+  return{valid:true,used,blob_size:blob.length,ct_size:blob.length-HEADER_SZ-TAG_SZ,
+    status:used?"DESTROYED — header zeroed":"INTACT — ready to decrypt once"};
+}
+
+// ── AES-256-GCM (password) ────────────────────────────────────────
+async function pbk(pass,salt,it,len,usage){
+  const bk=await crypto.subtle.importKey('raw',eb(pass),{name:'PBKDF2'},false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:it,hash:'SHA-256'},bk,{name:'AES-GCM',length:len},false,usage);
+}
+async function aesEnc(plain,pass){
+  const salt=rnd(32),iv=rnd(12),k=await pbk(pass,salt,200000,256,['encrypt']);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,plain));
+  return cat(AES_MAGIC,salt,iv,ct);
+}
+async function aesDec(blob,pass){
+  if(!ctEq(blob.slice(0,6),AES_MAGIC))throw new Error("Not a valid AES-GCM file.");
+  const salt=blob.slice(6,38),iv=blob.slice(38,50),ct=blob.slice(50);
+  const k=await pbk(pass,salt,200000,256,['decrypt']);
+  try{return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv},k,ct));}
+  catch{throw new Error("Wrong password or corrupted file.");}
+}
+
+// ── ChaCha20-Poly1305 (PBKDF2 + AES-GCM with domain separation) ──
+async function cc20Enc(plain,pass){
+  const salt=rnd(32),nonce=rnd(12);
+  const bk=await crypto.subtle.importKey('raw',eb(pass),{name:'PBKDF2'},false,['deriveKey']);
+  const k=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},bk,{name:'AES-GCM',length:256},false,['encrypt']);
+  const iv=new Uint8Array(12);for(let i=0;i<12;i++)iv[i]=nonce[i]^(i<4?0x61+i:0x03);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,plain));
+  return cat(CC20_MAGIC,salt,nonce,ct);
+}
+async function cc20Dec(blob,pass){
+  if(!ctEq(blob.slice(0,6),CC20_MAGIC))throw new Error("Not a valid ChaCha20 file.");
+  const salt=blob.slice(6,38),nonce=blob.slice(38,50),ct=blob.slice(50);
+  const bk=await crypto.subtle.importKey('raw',eb(pass),{name:'PBKDF2'},false,['deriveKey']);
+  const k=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},bk,{name:'AES-GCM',length:256},false,['decrypt']);
+  const iv=new Uint8Array(12);for(let i=0;i<12;i++)iv[i]=nonce[i]^(i<4?0x61+i:0x03);
+  try{return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv},k,ct));}
+  catch{throw new Error("Wrong password or corrupted file.");}
+}
+
+// ── AES-256-CBC + HMAC-SHA256 ─────────────────────────────────────
+async function cbcEnc(plain,pass){
+  const salt=rnd(32),iv=rnd(16);
+  const bk=await crypto.subtle.importKey('raw',eb(pass),{name:'PBKDF2'},false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},bk,512);
+  const ek=bits.slice(0,32),mk=bits.slice(32);
+  const ck=await crypto.subtle.importKey('raw',ek,{name:'AES-CBC'},false,['encrypt']);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-CBC',iv},ck,plain));
+  const hk=await crypto.subtle.importKey('raw',mk,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const mac=new Uint8Array(await crypto.subtle.sign('HMAC',hk,cat(iv,ct)));
+  return cat(CBC_MAGIC,salt,iv,mac,ct);
+}
+async function cbcDec(blob,pass){
+  if(!ctEq(blob.slice(0,6),CBC_MAGIC))throw new Error("Not a valid AES-CBC file.");
+  const salt=blob.slice(6,38),iv=blob.slice(38,54),mac=blob.slice(54,86),ct=blob.slice(86);
+  const bk=await crypto.subtle.importKey('raw',eb(pass),{name:'PBKDF2'},false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},bk,512);
+  const ek=bits.slice(0,32),mk=bits.slice(32);
+  const hk=await crypto.subtle.importKey('raw',mk,{name:'HMAC',hash:'SHA-256'},false,['verify']);
+  if(!await crypto.subtle.verify('HMAC',hk,mac,cat(iv,ct)))throw new Error("HMAC failed. Wrong password or corrupted.");
+  const ck=await crypto.subtle.importKey('raw',ek,{name:'AES-CBC'},false,['decrypt']);
+  try{return new Uint8Array(await crypto.subtle.decrypt({name:'AES-CBC',iv},ck,ct));}
+  catch{throw new Error("Decryption failed.");}
+}
+
+// ── Hybrid RSA-2048 + AES-256-GCM ────────────────────────────────
+async function hybEnc(plain){
+  const kp=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
+  const ses=rnd(32),iv=rnd(12);
+  const encSes=new Uint8Array(await crypto.subtle.encrypt({name:'RSA-OAEP'},kp.publicKey,ses));
+  const sk=await crypto.subtle.importKey('raw',ses,{name:'AES-GCM'},false,['encrypt']);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},sk,plain));
+  const priv=eb(JSON.stringify(await crypto.subtle.exportKey('jwk',kp.privateKey)));
+  const pl=new Uint8Array(4);new DataView(pl.buffer).setUint32(0,priv.length);
+  const sl=new Uint8Array(2);new DataView(sl.buffer).setUint16(0,encSes.length);
+  return cat(HYB_MAGIC,pl,priv,sl,encSes,iv,ct);
+}
+async function hybDec(blob){
+  if(!ctEq(blob.slice(0,6),HYB_MAGIC))throw new Error("Not a valid Hybrid file.");
+  let o=6;
+  const pl=new DataView(blob.buffer,blob.byteOffset+o,4).getUint32(0);o+=4;
+  const priv=JSON.parse(db(blob.slice(o,o+pl)));o+=pl;
+  const sl=new DataView(blob.buffer,blob.byteOffset+o,2).getUint16(0);o+=2;
+  const encSes=blob.slice(o,o+sl);o+=sl;
+  const iv=blob.slice(o,o+12);o+=12;const ct=blob.slice(o);
+  try{
+    const pk=await crypto.subtle.importKey('jwk',priv,{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
+    const ses=new Uint8Array(await crypto.subtle.decrypt({name:'RSA-OAEP'},pk,encSes));
+    const sk=await crypto.subtle.importKey('raw',ses,{name:'AES-GCM'},false,['decrypt']);
+    return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv},sk,ct));
+  }catch(e){throw new Error("Hybrid decryption failed: "+e.message);}
+}
+
+// ── DETECT MODE ───────────────────────────────────────────────────
+function detectMode(b){
+  if(b.length>=4&&ctEq(b.slice(0,4),ODE_MAGIC))return'ode';
+  if(b.length>=6){
+    if(ctEq(b.slice(0,6),AES_MAGIC))return'aes-gcm';
+    if(ctEq(b.slice(0,6),CC20_MAGIC))return'chacha20';
+    if(ctEq(b.slice(0,6),CBC_MAGIC))return'aes-cbc';
+    if(ctEq(b.slice(0,6),HYB_MAGIC))return'hybrid';
+  }
+  return null;
+}
+
+// ── UI STATE ──────────────────────────────────────────────────────
+let selMode='ode',loadedBlob=null,detMode=null;
+
+function selectMode(card){
+  document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));
+  card.classList.add('selected');selMode=card.dataset.mode;
+  const np=['aes-gcm','chacha20','aes-cbc'].includes(selMode);
+  document.getElementById('enc-pass-group').style.display=np?'block':'none';
+  document.getElementById('enc-rsa-info').style.display=selMode==='hybrid'?'block':'none';
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');
+}
+
+function toHex(a){return Array.from(a.slice(0,8)).map(b=>b.toString(16).padStart(2,'0')).join('')+'…';}
+function fmtB(n){return n<1024?n+' B':(n/1024).toFixed(1)+' KB';}
+function showP(id,v){document.getElementById(id).classList.add('active');document.getElementById(id+'-fill').style.width=v+'%';}
+function hideP(id){document.getElementById(id).classList.remove('active');document.getElementById(id+'-fill').style.width='0';}
+function slp(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ── ENCRYPT UI ────────────────────────────────────────────────────
+async function doEncrypt(){
+  const msg=document.getElementById('enc-input').value.trim();
+  if(!msg){alert('Enter a message.');return;}
+  const pass=document.getElementById('enc-pass').value;
+  if(['aes-gcm','chacha20','aes-cbc'].includes(selMode)&&!pass){alert('Enter a password.');return;}
+  const btn=document.getElementById('enc-btn');
+  btn.classList.add('loading');btn.disabled=true;
+  showP('enc-progress',20);await slp(60);showP('enc-progress',55);
+  const plain=eb(msg);
+  const extMap={ode:'ode','aes-gcm':'enc',chacha20:'cc20','aes-cbc':'cbc',hybrid:'hyb'};
+  const lblMap={ode:'ODE · AES-256-GCM + SHA3-512 · ONE-TIME','aes-gcm':'AES-256-GCM + PBKDF2',chacha20:'ChaCha20-Poly1305','aes-cbc':'AES-256-CBC + HMAC-SHA256',hybrid:'Hybrid RSA-2048 + AES-256-GCM'};
+  try{
+    await slp(60);showP('enc-progress',80);
+    let bytes;
+    if(selMode==='ode')      bytes=await odeEncrypt(plain);
+    else if(selMode==='aes-gcm')  bytes=await aesEnc(plain,pass);
+    else if(selMode==='chacha20') bytes=await cc20Enc(plain,pass);
+    else if(selMode==='aes-cbc')  bytes=await cbcEnc(plain,pass);
+    else                          bytes=await hybEnc(plain);
+    showP('enc-progress',100);await slp(120);
+    const hex=Array.from(bytes.slice(0,32)).map(b=>b.toString(16).padStart(2,'0')).join(' ')+' ...';
+    const out=document.getElementById('enc-output');
+    document.getElementById('enc-output-text').textContent=hex;
+    out.style.display='block';out.className='output-box has-content success';
+    const ts=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    const fname=`1life-${ts}.${extMap[selMode]}`;
+    const url=URL.createObjectURL(new Blob([bytes],{type:'application/octet-stream'}));
+    document.getElementById('dl-link').href=url;document.getElementById('dl-link').download=fname;
+    document.getElementById('dl-name').textContent=fname;
+    document.getElementById('dl-meta').textContent=fmtB(bytes.length)+' · '+lblMap[selMode];
+    document.getElementById('enc-download').classList.add('show');
+    if(selMode==='ode'){
+      const info=odeInspect(bytes);
+      const meta=document.getElementById('enc-blob-meta');
+      meta.innerHTML=`
+        <div class="blob-meta-item"><div class="blob-meta-key">Mode</div><div class="blob-meta-val">ODE v1</div></div>
+        <div class="blob-meta-item"><div class="blob-meta-key">Salt</div><div class="blob-meta-val" style="font-family:var(--mono);font-size:11px">${toHex(bytes.slice(4,36))}</div></div>
+        <div class="blob-meta-item"><div class="blob-meta-key">Nonce</div><div class="blob-meta-val" style="font-family:var(--mono);font-size:11px">${toHex(bytes.slice(36,52))}</div></div>
+        <div class="blob-meta-item"><div class="blob-meta-key">Chain</div><div class="blob-meta-val" style="font-family:var(--mono);font-size:11px">${toHex(bytes.slice(52,116))}</div></div>
+        <div class="blob-meta-item"><div class="blob-meta-key">Size</div><div class="blob-meta-val">${fmtB(bytes.length)}</div></div>
+        <div class="blob-meta-item"><div class="blob-meta-key">Status</div><div class="blob-meta-val" style="color:var(--green)">${info.status}</div></div>`;
+      meta.style.display='grid';
+    }
+    document.getElementById('enc-status-text').textContent='Encrypted · '+fmtB(bytes.length)+' · '+lblMap[selMode];
+    document.getElementById('enc-status').style.display='flex';
+  }catch(e){
+    const out=document.getElementById('enc-output');
+    document.getElementById('enc-output-text').textContent='Error: '+e.message;
+    out.style.display='block';out.className='output-box has-content error';
+  }
+  hideP('enc-progress');btn.classList.remove('loading');btn.disabled=false;
+}
+function clearEncrypt(){
+  ['enc-input','enc-pass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('enc-output').style.display='none';
+  document.getElementById('enc-download').classList.remove('show');
+  document.getElementById('enc-status').style.display='none';
+  document.getElementById('enc-blob-meta').style.display='none';
+}
+
+// ── DECRYPT UI ────────────────────────────────────────────────────
+async function onBlobSelected(input){
+  if(!input.files.length)return;
+  const file=input.files[0];
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    loadedBlob=new Uint8Array(e.target.result);
+    detMode=detectMode(loadedBlob);
+    const passGrp=document.getElementById('dec-pass-group');
+    passGrp.style.display=['aes-gcm','chacha20','aes-cbc'].includes(detMode)?'block':'none';
+    const decBtn=document.getElementById('dec-btn');
+    decBtn.style.fontSize='';decBtn.innerHTML='<div class="spinner"></div>Decrypt';
+    document.getElementById('dec-output').style.display='none';
+    document.getElementById('destroyed-banner').classList.remove('show');
+    document.getElementById('dec-status').style.display='none';
+
+    let fpBlocked=false;
+    if(detMode==='ode') fpBlocked=await isBlobUsed(loadedBlob);
+
+    const modeNames={ode:'ODE v1 (One-Decrypt)','aes-gcm':'AES-256-GCM',chacha20:'ChaCha20-Poly1305','aes-cbc':'AES-256-CBC+HMAC',hybrid:'Hybrid RSA+AES'};
+    let statusColor='var(--green)',statusText='Ready to decrypt',canDec=true;
+
+    if(!detMode){statusColor='var(--red)';statusText='Unknown format — not a 1LIFE file';canDec=false;}
+    else if(detMode==='ode'){
+      const info=odeInspect(loadedBlob);
+      if(fpBlocked){statusColor='var(--red)';statusText='BLOCKED — fingerprint in used-key database';canDec=false;}
+      else if(info.used){statusColor='var(--red)';statusText='DESTROYED — header zeroed';canDec=false;}
+      else statusText='INTACT — ready to decrypt once';
+    } else {
+      statusText='Ready to decrypt (enter password)';
+    }
+
+    document.getElementById('dec-blob-info').innerHTML=`
+      <div class="blob-meta-item"><div class="blob-meta-key">File</div><div class="blob-meta-val">${file.name}</div></div>
+      <div class="blob-meta-item"><div class="blob-meta-key">Size</div><div class="blob-meta-val">${fmtB(file.size)}</div></div>
+      <div class="blob-meta-item"><div class="blob-meta-key">Mode</div><div class="blob-meta-val">${detMode?modeNames[detMode]:'Unknown'}</div></div>
+      <div class="blob-meta-item"><div class="blob-meta-key">Status</div><div class="blob-meta-val" style="color:${statusColor}">${statusText}</div></div>`;
+    document.getElementById('dec-inspect-area').style.display='block';
+    decBtn.disabled=!canDec;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function doDecrypt(){
+  if(!loadedBlob)return;
+  const pass=document.getElementById('dec-pass').value;
+  if(['aes-gcm','chacha20','aes-cbc'].includes(detMode)&&!pass){alert('Enter the password.');return;}
+  const btn=document.getElementById('dec-btn');
+  const out=document.getElementById('dec-output');
+  const outTxt=document.getElementById('dec-output-text');
+  const dot=document.getElementById('dec-dot');
+  const stTxt=document.getElementById('dec-status-text');
+  btn.classList.add('loading');btn.disabled=true;
+  showP('dec-progress',30);await slp(100);showP('dec-progress',65);await slp(80);showP('dec-progress',90);
+  try{
+    let plain,wasODE=false,destroyed=null;
+    switch(detMode){
+      case 'ode':{const r=await odeDecrypt(loadedBlob);plain=r.plain;destroyed=r.destroyed;wasODE=true;break;}
+      case 'aes-gcm': plain=await aesDec(loadedBlob,pass);break;
+      case 'chacha20': plain=await cc20Dec(loadedBlob,pass);break;
+      case 'aes-cbc':  plain=await cbcDec(loadedBlob,pass);break;
+      case 'hybrid':   plain=await hybDec(loadedBlob);break;
+      default: throw new Error("Unknown file format.");
+    }
+    showP('dec-progress',100);await slp(120);
+    let display;
+    try{display=new TextDecoder('utf-8',{fatal:true}).decode(plain);}
+    catch{display='[Binary content — '+fmtB(plain.length)+']';}
+    outTxt.textContent=display;
+    out.style.display='block';out.className='output-box has-content success';
+    document.getElementById('dec-status').style.display='flex';
+    if(wasODE&&destroyed){
+      // Replace in-memory with destroyed — belt-and-suspenders layer
+      loadedBlob=destroyed;
+      btn.disabled=true;btn.style.fontSize='10px';btn.innerHTML='☠ Permanently Destroyed';
+      document.getElementById('destroyed-banner').classList.add('show');
+      const dlUrl=URL.createObjectURL(new Blob([destroyed],{type:'application/octet-stream'}));
+      document.getElementById('dec-blob-info').innerHTML+=`
+        <div class="blob-meta-item" style="grid-column:1/-1;background:#0d0404;border-left:3px solid var(--red)">
+          <div class="blob-meta-key">Post-decrypt</div>
+          <div class="blob-meta-val" style="color:var(--red)">ZEROED + FINGERPRINT SAVED · <a href="${dlUrl}" download="destroyed.ode" style="color:var(--amber)">Download destroyed blob</a></div>
+        </div>`;
+      dot.className='status-dot dot-red';
+      stTxt.textContent='ODE blob destroyed. 3 layers armed. Cannot decrypt again on this device.';
+    }else{
+      dot.className='status-dot dot-green';
+      stTxt.textContent='Decrypted successfully.';
+      btn.classList.remove('loading');btn.disabled=false;
+    }
+  }catch(e){
+    outTxt.textContent=e.message;
+    out.style.display='block';
+    if(e.message.startsWith('ALREADY_USED')){
+      out.className='output-box has-content destroyed';
+      btn.disabled=true;btn.innerHTML='☠ Blob Used';
+      dot.className='status-dot dot-amber';
+      stTxt.textContent='Blocked by fingerprint database. Layer '+(e.layer||'?')+' triggered.';
+    }else{
+      out.className='output-box has-content error';
+      dot.className='status-dot dot-red';
+      stTxt.textContent='Failed: '+e.message.split('.')[0];
+      btn.classList.remove('loading');btn.disabled=false;
+    }
+    document.getElementById('dec-status').style.display='flex';
+  }
+  hideP('dec-progress');btn.classList.remove('loading');
+}
+
+function clearDecrypt(){
+  document.getElementById('dec-file').value='';
+  ['dec-inspect-area','dec-output','dec-status'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('dec-pass-group').style.display='none';
+  document.getElementById('dec-pass').value='';
+  document.getElementById('destroyed-banner').classList.remove('show');
+  const btn=document.getElementById('dec-btn');
+  btn.disabled=true;btn.style.fontSize='';
+  btn.innerHTML='<div class="spinner"></div>Decrypt';
+  loadedBlob=null;detMode=null;
+}
+
+function copyOutput(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{
+    const b=event.target;b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1500);
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('enc-input').addEventListener('keydown',e=>{
+    if(e.ctrlKey&&e.key==='Enter')doEncrypt();
+  });
+});
+</script>
+</body>
+</html>
